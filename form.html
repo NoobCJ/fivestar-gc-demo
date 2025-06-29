@@ -128,6 +128,8 @@ var woocommerce_params = {"ajax_url":"\/wp-admin\/admin-ajax.php","wc_ajax_url":
 var wc_add_to_cart_params = {"ajax_url":"\/wp-admin\/admin-ajax.php","wc_ajax_url":"\/?wc-ajax=%%endpoint%%","i18n_view_cart":"View cart","cart_url":"https:\/\/fivestar-gc.com","is_cart":"","cart_redirect_after_add":"no"};
 /* ]]> */
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <script type="text/javascript" src="https://fivestar-gc.com/wp-content/plugins/woocommerce/assets/js/frontend/add-to-cart.min.js?ver=8.9.3" id="wc-add-to-cart-js" defer="defer" data-wp-strategy="defer"></script>
 <link rel="https://api.w.org/" href="https://fivestar-gc.com/wp-json/" /><link rel="alternate" title="JSON" type="application/json" href="https://fivestar-gc.com/wp-json/wp/v2/pages/25" /><link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://fivestar-gc.com/xmlrpc.php?rsd" />
 <meta name="generator" content="WordPress 6.8.1" />
@@ -523,16 +525,22 @@ button:hover {
         <label for="contact-2">Contact Person</label>
         <input type="text" id="contact-2" class="input-2" required />
 
+
+
         <button type="submit" class="btn-2">Submit</button>
       </form>
     </div>
 
     <!-- Job List and Detail Section -->
     <div class="list-section-2">
-      <h2>Jobs List</h2>
-      <ul id="jobList-2"></ul>
-      <div id="jobDetails-2" class="job-details-2"></div>
-    </div>
+  <h2>Jobs List</h2>
+  <input type="text" id="searchInput-2" class="input-2" placeholder="Search jobs..." oninput="filterJobs2()" />
+
+  <ul id="jobList-2"></ul>
+  <div id="jobDetails-2" class="job-details-2"></div>
+  <button id="exportBtn-2" class="btn-2" onclick="exportPDF2()" style="display: none;">Export PDF</button>
+
+</div>
   </div>
 
   <script>
@@ -567,15 +575,70 @@ button:hover {
       });
     }
 
-    function showDetails2(index) {
-      const job = jobs2[index];
-      jobDetails2.innerHTML = `
-        <strong>Job Number:</strong> ${job.jobNumber}<br>
-        <strong>Property Name:</strong> ${job.property}<br>
-        <strong>Address:</strong> ${job.address}<br>
-        <strong>Contact:</strong> ${job.contact}
-      `;
+let currentOpenIndex2 = null; // Track the currently open job index
+
+function showDetails2(index) {
+  // If the same job is clicked again, close it
+  if (currentOpenIndex2 === index) {
+    jobDetails2.innerHTML = "";
+    document.getElementById("exportBtn-2").style.display = "none";
+    currentOpenIndex2 = null;
+    return;
+  }
+
+  // Open new job detail
+  const job = jobs2[index];
+  jobDetails2.innerHTML = `
+    <strong>Job Number:</strong> ${job.jobNumber}<br>
+    <strong>Property Name:</strong> ${job.property}<br>
+    <strong>Address:</strong> ${job.address}<br>
+    <strong>Contact:</strong> ${job.contact}
+  `;
+  document.getElementById("exportBtn-2").style.display = "block";
+  currentOpenIndex2 = index; // Update current open index
+}
+
+function filterJobs2() {
+  const keyword = document.getElementById("searchInput-2").value.toLowerCase();
+  const filteredJobs = jobs2.filter(job =>
+    job.jobNumber.toLowerCase().includes(keyword) ||
+    job.property.toLowerCase().includes(keyword) ||
+    job.address.toLowerCase().includes(keyword) ||
+    job.contact.toLowerCase().includes(keyword)
+  );
+
+  jobList2.innerHTML = "";
+  filteredJobs.forEach((job, index) => {
+    const li = document.createElement("li");
+    li.textContent = `${job.jobNumber} — ${job.property}`;
+    li.onclick = () => showDetails2(jobs2.indexOf(job)); // maintain original index
+    jobList2.appendChild(li);
+  });
+
+  // Clear detail view if no job matches
+  if (filteredJobs.length === 0) {
+    jobDetails2.innerHTML = "";
+    document.getElementById("exportBtn-2").style.display = "none";
+  }
+}
+
+
+//export button to download the PDF 
+    async function exportPDF2() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const content = document.getElementById("jobDetails-2").innerText;
+
+    if (!content.trim()) {
+      alert("No job detail selected!");
+      return;
     }
+
+    doc.text("Job Detail", 10, 10);
+    doc.text(content, 10, 20);
+    doc.save("job-detail.pdf");
+  }
   </script>
 
 
